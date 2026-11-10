@@ -431,6 +431,30 @@ func (a *app) freshenLiked(lib *library) {
 	}()
 }
 
+// listRow is how tall a song's row is, its padding and gap, and whether the
+// cover shows in it, as settings.ListStyle has it.
+func (a *app) listRow() (height, pad, gap float32, cover bool) {
+	if a.settings.ListStyle == listCompact {
+		return 42, 8, 10, false
+	}
+	return 54, 12, 14, true
+}
+
+// rowBackground is the background of the i'th song's row: the accent under
+// the one playing, a tint under the pointer, or the zebra tint on every
+// other row for a list set to zebra.
+func (a *app) rowBackground(i int, playing, hovered bool) ui.Color {
+	switch {
+	case playing:
+		return a.pal.accent.Alpha(0.09)
+	case hovered:
+		return a.pal.hover
+	case a.settings.ListStyle != listPlain && i%2 == 1:
+		return a.pal.zebra
+	}
+	return ui.Transparent
+}
+
 // trackRows lists tracks under a header, which scrolls with them; a click
 // plays the list from the track clicked.
 func (a *app) trackRows(c *ui.Context, tracks []music.Track, covers bool, header func(c *ui.Context), footer ...func(c *ui.Context)) {
@@ -477,17 +501,11 @@ func (a *app) trackRow(c *ui.Context, tracks []music.Track, i int, covers bool, 
 	// An album's page has no column of the album its songs are on.
 	wide := w-sidebarWidth > 820 && a.route.page != pageAlbum
 	playing := sameTrack(a.pl.Current(), tr)
-	row := ui.ButtonBase(c.Key(tr.ID)).Height(54).PaddingX(12).Gap(14).Radius(10).AlignItems(ui.Center).FocusRing(false).Label(tr.Name).
+	height, pad, gap, coverRow := a.listRow()
+	row := ui.ButtonBase(c.Key(tr.ID)).Height(height).PaddingX(pad).Gap(gap).Radius(10).AlignItems(ui.Center).FocusRing(false).Label(tr.Name).
 		ContextMenu(a.songItems(tr, pid))
 	hovered := row.Hovered()
-	bg := ui.Transparent
-	switch {
-	case playing:
-		bg = p.accent.Alpha(0.09)
-	case hovered:
-		bg = p.hover
-	}
-	row.Background(row.AnimateColor("bg", bg, ui.Animation{Duration: 100 * time.Millisecond}))
+	row.Background(row.AnimateColor("bg", a.rowBackground(i, playing, hovered), ui.Animation{Duration: 100 * time.Millisecond}))
 	if tr.Unavailable {
 		row.Opacity(0.42)
 	}
@@ -503,7 +521,7 @@ func (a *app) trackRow(c *ui.Context, tracks []music.Track, i int, covers bool, 
 				ui.Textf(c, "%d", i+1).FontSize(13).FontFeatures("tnum").TextColor(p.faint)
 			}
 		})
-		if covers {
+		if covers && coverRow {
 			a.cover(c, tr.Album.ImageURL, 96, 38, 6)
 		}
 		ui.Column(c).Grow(3).Basis(0).MinWidth(0).Gap(3).Children(func() {

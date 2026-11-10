@@ -354,6 +354,19 @@ func (a *app) settingsSections(c *ui.Context, p palette) []settingsSection {
 				a.changed()
 			}
 		})
+		row(T("List"), "", func() {
+			styles := []string{listPlain, listZebra, listCompact}
+			i := 0
+			for k, style := range styles {
+				if style == s.ListStyle {
+					i = k
+				}
+			}
+			if segmented(c.Key("list-style"), &i, T("Default"), T("Zebra"), T("Compact")) {
+				s.ListStyle = styles[i]
+				a.changed()
+			}
+		})
 		// Only on macOS: elsewhere the icon is always in the notification
 		// area.
 		if runtime.GOOS == "darwin" {

@@ -81,11 +81,25 @@ type settings struct {
 	// CacheMB is how many megabytes the songs kept on disk may take; 0
 	// keeps none.
 	CacheMB int `json:"cacheMB"`
+	// ListStyle is how songs are listed: the app's own, tinted row by row,
+	// or shorter rows without covers.
+	ListStyle string `json:"listStyle,omitempty"`
 	// SearchHistory keeps submitted keywords, most recent first.
 	SearchHistory []string `json:"searchHistory,omitempty"`
 
 	path string // where they were loaded from, and are saved to
 }
+
+// How the app lists songs, as settings.ListStyle has it.
+const (
+	// listPlain lists them one after another, on the page's background.
+	listPlain = ""
+	// listZebra tints every other row.
+	listZebra = "zebra"
+	// listCompact tints them as listZebra does, in rows short enough for
+	// more songs to a screen, without the covers.
+	listCompact = "compact"
+)
 
 func defaultSettings() settings {
 	return settings{Language: i18n.System, NotchActivity: true, Quality: "high", Appearance: "system", Volume: 0.8, Normalize: true, AppIcon: "dock-and-menubar", CacheMB: 2048}
